@@ -1,18 +1,72 @@
 part of 'pages.dart';
 
 class HomePage extends StatefulWidget {
+  final List<ProductModel> cart = [];
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  String selectMenu = "";
-  @override
+  bool visible = false;
+  bool isSelected = false;
+  int sum = 0;
+  var convert;
+  int itemCount = 0;
+
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Colors.white,
-        child: SafeArea(
+    double height = MediaQuery.of(context).size.height - 400;
+    var provider = Provider.of<CartProvider>(context);
+//    var cart = provider.cart;
+    int totalCount = 0;
+    if(provider.cart.length > 0){
+      totalCount = provider.cart.values.reduce((a, b) => a + b);
+    }
+    return SafeArea(
+      child: Scaffold(
+        floatingActionButton: Visibility(
+          visible: visible,
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                widget.cart.forEach((element) {
+                  print(element.name);
+                });
+              });
+            },
+            child: Container(
+              padding: EdgeInsets.all(10),
+              width: MediaQuery.of(context).size.width,
+              height: 60,
+              margin: EdgeInsets.only(left: 15, right: 15),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text("$totalCount item | $convert",
+                          style: whiteTextFont.copyWith(fontSize: 15)),
+                      Text("Pasar GunungPati",
+                          style: whiteTextFont.copyWith(fontSize: 12))
+                    ],
+                  ),
+                  Icon(
+                    Icons.shopping_cart,
+                    color: Colors.white,
+                  )
+                ],
+              ),
+            ),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        body: Container(
+          color: Colors.white,
           child: Container(
               child: ListView(
             children: <Widget>[
@@ -28,7 +82,7 @@ class _HomePageState extends State<HomePage> {
                 height: 10,
               ),
               SizedBox(
-                height: 200,
+                height: 150,
                 child: BlocBuilder<CategoryBloc, CategoryState>(
                     builder: (context, categoryState) {
                   if (categoryState is CategoryInitial) {
@@ -37,47 +91,43 @@ class _HomePageState extends State<HomePage> {
                     return ShimmerLoading();
                   } else if (categoryState is CategoryLoadedState) {
                     List<CategoryModel> category = categoryState.category;
-                    return GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4),
-                      itemBuilder: (ctx, index) {
-                        return Container(
-                            padding: EdgeInsets.all(8),
-                            child: Card(
-                                color: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                                elevation: 1,
-                                child: Container(
-                                  margin: EdgeInsets.only(bottom: 4),
-                                  width: 60,
-                                  height: 60,
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: <Widget>[
-                                        SizedBox(
-                                          height: 30,
-                                          child: Image(
-                                            image: NetworkImage(
-                                                category[index].image),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: 5,
-                                        ),
-                                        Text(
-                                          category[index].name,
-                                          style: GoogleFonts.raleway()
-                                              .copyWith(fontSize: 15),
-                                        )
-                                      ],
+                    return Container(
+                      margin: EdgeInsets.only(left: 15, right: 15),
+                      child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5),
+                        physics: NeverScrollableScrollPhysics(),
+                        itemBuilder: (ctx, index) {
+                          return Container(
+                            margin: EdgeInsets.only(bottom: 4),
+                            width: 60,
+                            height: 60,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  SizedBox(
+                                    height: 30,
+                                    child: Image(
+                                      image:
+                                          NetworkImage(category[index].image),
                                     ),
                                   ),
-                                )));
-                      },
-                      itemCount: category.length,
+                                  SizedBox(
+                                    height: 5,
+                                  ),
+                                  Text(
+                                    category[index].name,
+                                    style: GoogleFonts.raleway()
+                                        .copyWith(fontSize: 15),
+                                  )
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        itemCount: category.length,
+                      ),
                     );
                   } else if (categoryState is CategoryErrorState) {
                     return Text(categoryState.message);
@@ -85,9 +135,6 @@ class _HomePageState extends State<HomePage> {
                     return ShimmerLoading();
                   }
                 }),
-              ),
-              SizedBox(
-                height: 15,
               ),
               SizedBox(
                   height: 100,
@@ -139,7 +186,7 @@ class _HomePageState extends State<HomePage> {
                 height: 20,
               ),
               SizedBox(
-                height: MediaQuery.of(context).size.height - 500,
+                height: height,
                 width: double.infinity,
                 child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (_, productState) {
@@ -150,14 +197,71 @@ class _HomePageState extends State<HomePage> {
                   } else if (productState is ProductLoaded) {
                     List<ProductModel> product = productState.product;
                     return ListView.builder(
-                      reverse: true,
-                      itemBuilder: (_, index) => Container(
-                        child: ProductCard(
-                          img: product[index].img,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemBuilder: (_, index) {
+                        return ProductCard(
+                          product[index].name,
+                          isSelected: widget.cart.contains(product[index])
+                              ? isSelected = true
+                              : isSelected = false,
                           price: product[index].price,
-                          title: product[index].name,
-                        ),
-                      ),
+                          img: product[index].img,
+                          addToChart: () {
+                            provider.addToCart(index);
+                            print(provider.cart.length);
+                            setState(() {
+                              itemCount = 1;
+                              isSelected = true;
+                              if (isSelected == true) {
+                                visible = true;
+                              }
+                              widget.cart.add(product[index]);
+                              var _price = int.parse(product[index].price);
+                              sum = sum + _price;
+                              print(_price);
+                              convert = NumberFormat.currency(
+                                  locale: "id_ID",
+                                  decimalDigits: 0,
+                                  symbol: "Rp ")
+                                  .format(sum);
+                            });
+                          },
+                          addItem: () {
+                            setState(() {
+                              itemCount+=1;
+                              var _price = int.parse(product[index].price);
+                              sum = sum + _price;
+                              print(_price);
+                              convert = NumberFormat.currency(
+                                  locale: "id_ID",
+                                  decimalDigits: 0,
+                                  symbol: "Rp ")
+                                  .format(sum);
+                            });
+                          },
+                          removeItem: () {
+                            setState(() {
+                              itemCount-=1;
+                              if(itemCount < 1){
+                                itemCount = 1;
+                                isSelected = false;
+                                visible = false;
+                                provider.cart.clear();
+                                widget.cart.remove(product[index]);
+                              }
+                              var _price = int.parse(product[index].price);
+                              sum = sum - _price;
+                              print(_price);
+                              convert = NumberFormat.currency(
+                                  locale: "id_ID",
+                                  decimalDigits: 0,
+                                  symbol: "Rp ")
+                                  .format(sum);
+                            });
+                          },
+                          counter: itemCount,
+                        );
+                      },
                       itemCount: product.length,
                     );
                   } else if (productState is ProductError) {
@@ -182,7 +286,7 @@ class Header extends StatelessWidget {
       children: <Widget>[
         Material(
           child: Container(
-            height: 200,
+            height: 150,
             width: double.infinity,
             decoration: BoxDecoration(color: primaryColor),
             child: Stack(
@@ -209,7 +313,7 @@ class Header extends StatelessWidget {
         Card(
           margin: EdgeInsets.only(top: 110, left: 15, right: 15),
           child: Container(
-            height: 150,
+            height: 140,
             width: double.infinity,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +369,7 @@ class Header extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: 20,
+                  height: 5,
                 ),
                 Align(
                     alignment: Alignment.bottomCenter,

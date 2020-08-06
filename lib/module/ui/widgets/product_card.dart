@@ -1,13 +1,24 @@
 part of 'widgets.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final String img;
-  final String title;
+  final String name;
   final String price;
-  ProductCard({this.img, this.title, this.price});
+  final bool isSelected;
+  final Function addItem;
+  final int counter;
+  final Function removeItem;
+  final Function addToChart;
+  ProductCard(this.name,{this.img,this.price,this.isSelected = false,this.addToChart,this.counter =1,this.addItem,this.removeItem});
+
+  @override
+  _ProductCardState createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
-    var _price = int.parse(price);
+    var _price = int.parse(widget.price);
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 15),
         height: 80,
@@ -22,7 +33,9 @@ class ProductCard extends StatelessWidget {
                   height: 80,
                   decoration: BoxDecoration(
                       image: DecorationImage(
-                          image: NetworkImage(img), fit: BoxFit.fill)),
+                          image: NetworkImage(
+                              widget.img),
+                          fit: BoxFit.fill)),
                 )
               ],
             ),
@@ -34,10 +47,14 @@ class ProductCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 SizedBox(
-                  width: MediaQuery.of(context).size.width - 112 - 116 - 12,
+                  width: MediaQuery.of(context).size.width -
+                      112 -
+                      116 -
+                      12,
                   child: Text(
-                    title,
-                    style: GoogleFonts.raleway().copyWith(fontSize: 15),
+                    widget.name,
+                    style: GoogleFonts.raleway()
+                        .copyWith(fontSize: 15),
                     maxLines: 1,
                     overflow: TextOverflow.clip,
                   ),
@@ -47,25 +64,36 @@ class ProductCard extends StatelessWidget {
                 ),
                 Text(
                     NumberFormat.currency(
-                            locale: "id_ID", decimalDigits: 0, symbol: "Rp ")
+                        locale: "id_ID",
+                        decimalDigits: 0,
+                        symbol: "Rp ")
                         .format(_price),
                     style: pinkTextFont.copyWith(
                       fontSize: 15,
                     ))
               ],
             ),
-            Container(
-              width: 100,
-              height: 30,
-              child: RaisedButton(
-                child: Text(
-                  "Tambahkan",
-                  style: whiteTextFont.copyWith(fontSize: 14),
-                ),
-                color: primaryColor,
-                onPressed: () {},
-              ),
-            ),
+            widget.isSelected
+                ? ButtonItemCount(
+              add: (){
+                if(widget.addItem != null){
+                  widget.addItem();
+                }
+              },
+              remove: () {
+                if(widget.removeItem != null){
+                  widget.removeItem();
+                }
+              },
+              countItem: widget.counter,
+            )
+                : ButtonAddChart(
+              onTap: () {
+                if(widget.addToChart != null){
+                  widget.addToChart();
+                }
+              },
+            )
           ],
         ));
   }
